@@ -11,8 +11,6 @@
 --platform=linux/arm64 matrixdotorg/synapse:latest
 --platform=linux/arm64 postgres:15-alpine
 --platform=linux/arm64 adguard/adguardhome:latest
---platform=linux/amd64 ghcr.io/sagernet/sing-box:latest-testing
---platform=linux/amd64 ghcr.io/sagernet/sing-box:latest
 
 
 #支持私库
