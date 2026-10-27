@@ -8,10 +8,10 @@ on:
       - images.txt
       - .github/workflows/docker.yml
   schedule:
-    - cron: '0 15 * * *'
+  #  - cron: '0 15 * * *'
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -22,6 +22,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Start latest run log
+        run: |
+          printf '推送记录（Asia/Shanghai）\n运行开始：%s\n' "$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S Asia/Shanghai')" > logs.txt
 
       - name: Install Skopeo and jq
         run: |
@@ -119,6 +123,7 @@ jobs:
             exit 1
           fi
 
+          any_failed=0
           while IFS= read -r line || [[ -n "$line" ]]; do
             line="${line%$'\r'}"
             line="${line%%#*}"
@@ -196,33 +201,66 @@ jobs:
             registry_slug="$(printf '%s' "$source_registry" | sed -E 's/[^a-zA-Z0-9]+/-/g; s/^-+//; s/-+$//' | tr '[:upper:]' '[:lower:]')"
             image_slug="${source_path//\//-}"
             image_slug="${image_slug,,}"
+            if [[ "$source_registry" != 'ghcr.io' ]]; then
+              image_slug="${registry_slug}-${image_slug}"
+            fi
             target_tag="$source_tag"
             copy_args=(--authfile "$auth_file")
             platform_args=()
 
             if [[ -n "$platform" ]]; then
-              platform_slug="${platform//\//-}"
-              target_tag="${source_tag}-${platform_slug}"
               platform_os="${platform%%/*}"
               platform_tail="${platform#*/}"
               platform_arch="${platform_tail%%/*}"
+              platform_slug="$platform_arch"
+              if [[ "$platform_os" != 'linux' ]]; then
+                platform_slug="${platform_os}-${platform_slug}"
+              fi
               platform_args=(--override-os "$platform_os" --override-arch "$platform_arch")
               if [[ "$platform_tail" == */* ]]; then
                 platform_variant="${platform_tail#*/}"
+                platform_slug="${platform_slug}-${platform_variant}"
                 platform_args+=(--override-variant "$platform_variant")
               fi
+              target_tag="${source_tag}-${platform_slug}"
             else
               copy_args+=(--all)
             fi
 
+            target_tag="${image_slug}-${target_tag}"
             if (( ${#target_tag} > 128 )); then
               echo "Target tag is longer than Docker's 128-character limit: $target_tag" >&2
               exit 1
             fi
 
-            target_ref="ghcr.io/${ghcr_owner}/mirror-${registry_slug}-${image_slug}:${target_tag}"
+            target_ref="ghcr.io/${ghcr_owner}/docker_images:${target_tag}"
             echo "Copying ${source_ref} to ${target_ref}${platform:+ (platform ${platform})}"
-            skopeo "${platform_args[@]}" copy "${copy_args[@]}" \
+            log_time="$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S Asia/Shanghai')"
+            if skopeo "${platform_args[@]}" copy "${copy_args[@]}" \
               "docker://${source_ref}" \
-              "docker://${target_ref}"
+              "docker://${target_ref}"; then
+              printf '%s | 推送成功 | %s | 源：%s\n' "$log_time" "$target_ref" "$source_ref" >> logs.txt
+            else
+              copy_status=$?
+              printf '%s | 推送失败（exit=%s） | %s | 源：%s\n' "$log_time" "$copy_status" "$target_ref" "$source_ref" >> logs.txt
+              any_failed=1
+            fi
           done < images.txt
+
+          if (( any_failed != 0 )); then
+            exit 1
+          fi
+
+      - name: Commit latest push log
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          printf '运行结果：%s\n运行结束：%s\n' "$JOB_STATUS" "$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S Asia/Shanghai')" >> logs.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add logs.txt
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update latest Docker image push log'
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
