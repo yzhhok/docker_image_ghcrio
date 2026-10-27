@@ -1,0 +1,228 @@
+name: Mirror Docker images to GHCR
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - images.txt
+      - .github/workflows/docker.yml
+  schedule:
+    - cron: '0 15 * * *'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  mirror:
+    name: Mirror images
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Skopeo and jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends skopeo jq
+
+      - name: Copy images to GitHub Container Registry
+        shell: bash
+        env:
+          # Optional repository secret. Example:
+          # {"docker.io":{"username":"user","password":"token"},"registry.example.com":{"username":"user","password":"password"}}
+          REGISTRY_AUTH_JSON: ${{ secrets.REGISTRY_AUTH_JSON }}
+          # Optional for private ghcr.io sources. This credential is also used for the destination.
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GHCR_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -Eeuo pipefail
+
+          if [[ ! -f images.txt ]]; then
+            echo 'images.txt was not found in the repository root.' >&2
+            exit 1
+          fi
+
+          auth_file="${RUNNER_TEMP}/skopeo-auth.json"
+          printf '{"auths":{}}\n' > "$auth_file"
+          trap 'rm -f "$auth_file"' EXIT
+
+          ghcr_json_username=''
+          ghcr_json_password=''
+          if [[ -n "${REGISTRY_AUTH_JSON:-}" ]]; then
+            if ! jq -e '
+              type == "object" and
+              all(to_entries[];
+                (.key | type == "string" and length > 0) and
+                (.value | type == "object" and
+                  (.username | type == "string" and length > 0) and
+                  (.password | type == "string" and length > 0))
+              )
+            ' <<< "$REGISTRY_AUTH_JSON" >/dev/null; then
+              echo 'REGISTRY_AUTH_JSON must map registry hostnames to username/password objects.' >&2
+              exit 1
+            fi
+
+            while IFS=$'\t' read -r registry username_b64 password_b64; do
+              username="$(printf '%s' "$username_b64" | base64 --decode)"
+              password="$(printf '%s' "$password_b64" | base64 --decode)"
+              registry="${registry,,}"
+
+              if [[ "$registry" == 'ghcr.io' ]]; then
+                ghcr_json_username="$username"
+                ghcr_json_password="$password"
+                continue
+              fi
+
+              login_registry="$registry"
+              if [[ "$login_registry" == 'index.docker.io' || "$login_registry" == 'registry-1.docker.io' ]]; then
+                login_registry='docker.io'
+              fi
+
+              printf '%s' "$password" | skopeo login \
+                --authfile "$auth_file" \
+                --username "$username" \
+                --password-stdin \
+                "$login_registry"
+            done < <(jq -r 'to_entries[] | [.key, (.value.username | @base64), (.value.password | @base64)] | @tsv' <<< "$REGISTRY_AUTH_JSON")
+          fi
+
+          if [[ -n "${GHCR_TOKEN:-}" ]]; then
+            if [[ -z "${GHCR_USERNAME:-}" ]]; then
+              echo 'Set GHCR_USERNAME when GHCR_TOKEN is provided.' >&2
+              exit 1
+            fi
+            ghcr_username="$GHCR_USERNAME"
+            ghcr_password="$GHCR_TOKEN"
+          elif [[ -n "$ghcr_json_password" ]]; then
+            ghcr_username="$ghcr_json_username"
+            ghcr_password="$ghcr_json_password"
+          else
+            ghcr_username="$GITHUB_ACTOR"
+            ghcr_password="$GITHUB_TOKEN"
+          fi
+
+          printf '%s' "$ghcr_password" | skopeo login \
+            --authfile "$auth_file" \
+            --username "$ghcr_username" \
+            --password-stdin \
+            ghcr.io
+
+          ghcr_owner="${GHCR_OWNER,,}"
+          if [[ -z "$ghcr_owner" ]]; then
+            echo 'Could not determine the GitHub owner for the destination package.' >&2
+            exit 1
+          fi
+
+          while IFS= read -r line || [[ -n "$line" ]]; do
+            line="${line%$'\r'}"
+            line="${line%%#*}"
+            read -r -a fields <<< "$line"
+            [[ ${#fields[@]} -eq 0 ]] && continue
+
+            platform=''
+            if [[ "${fields[0]}" == --platform=* ]]; then
+              platform="${fields[0]#--platform=}"
+              fields=("${fields[@]:1}")
+            elif [[ "${fields[0]}" == '--platform' ]]; then
+              if [[ ${#fields[@]} -lt 2 ]]; then
+                echo "Missing platform value in images.txt line: $line" >&2
+                exit 1
+              fi
+              platform="${fields[1]}"
+              fields=("${fields[@]:2}")
+            fi
+
+            if [[ ${#fields[@]} -ne 1 ]]; then
+              echo "Expected an image reference, optionally preceded by --platform, in images.txt line: $line" >&2
+              exit 1
+            fi
+
+            image="${fields[0]}"
+            if [[ "$image" == *://* ]]; then
+              echo "Use a Docker image reference without the protocol prefix: $image" >&2
+              exit 1
+            fi
+
+            if [[ -n "$platform" && ! "$platform" =~ ^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+(/[a-zA-Z0-9._-]+)?$ ]]; then
+              echo "Invalid platform '$platform'. Use os/arch or os/arch/variant, such as linux/arm64/v8." >&2
+              exit 1
+            fi
+
+            image_without_digest="${image%%@*}"
+            digest=''
+            if [[ "$image" == *@* ]]; then
+              digest="${image#*@}"
+            fi
+
+            last_component="${image_without_digest##*/}"
+            if [[ "$last_component" == *:* ]]; then
+              source_tag="${last_component##*:}"
+              source_repository="${image_without_digest%:*}"
+            else
+              source_tag='latest'
+              source_repository="$image_without_digest"
+            fi
+
+            if [[ -n "$digest" && "$source_tag" == 'latest' && "$last_component" != *:* ]]; then
+              digest_value="${digest#*:}"
+              source_tag="sha-${digest_value:0:12}"
+            fi
+
+            first_component="${source_repository%%/*}"
+            if [[ "$source_repository" == */* && ( "$first_component" == *.* || "$first_component" == *:* || "$first_component" == 'localhost' ) ]]; then
+              source_registry="$first_component"
+              source_path="${source_repository#*/}"
+            else
+              source_registry='docker.io'
+              source_path="$source_repository"
+              if [[ "$source_path" != */* ]]; then
+                source_path="library/$source_path"
+              fi
+            fi
+
+            source_registry="${source_registry,,}"
+            source_path="${source_path,,}"
+            source_ref="${source_registry}/${source_path}:${source_tag}"
+            if [[ -n "$digest" ]]; then
+              source_ref="${source_ref}@${digest}"
+            fi
+
+            registry_slug="$(printf '%s' "$source_registry" | sed -E 's/[^a-zA-Z0-9]+/-/g; s/^-+//; s/-+$//' | tr '[:upper:]' '[:lower:]')"
+            image_slug="${source_path//\//-}"
+            image_slug="${image_slug,,}"
+            target_tag="$source_tag"
+            copy_args=(--authfile "$auth_file")
+            platform_args=()
+
+            if [[ -n "$platform" ]]; then
+              platform_slug="${platform//\//-}"
+              target_tag="${source_tag}-${platform_slug}"
+              platform_os="${platform%%/*}"
+              platform_tail="${platform#*/}"
+              platform_arch="${platform_tail%%/*}"
+              platform_args=(--override-os "$platform_os" --override-arch "$platform_arch")
+              if [[ "$platform_tail" == */* ]]; then
+                platform_variant="${platform_tail#*/}"
+                platform_args+=(--override-variant "$platform_variant")
+              fi
+            else
+              copy_args+=(--all)
+            fi
+
+            if (( ${#target_tag} > 128 )); then
+              echo "Target tag is longer than Docker's 128-character limit: $target_tag" >&2
+              exit 1
+            fi
+
+            target_ref="ghcr.io/${ghcr_owner}/mirror-${registry_slug}-${image_slug}:${target_tag}"
+            echo "Copying ${source_ref} to ${target_ref}${platform:+ (platform ${platform})}"
+            skopeo "${platform_args[@]}" copy "${copy_args[@]}" \
+              "docker://${source_ref}" \
+              "docker://${target_ref}"
+          done < images.txt
