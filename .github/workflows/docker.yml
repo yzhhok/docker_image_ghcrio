@@ -180,27 +180,15 @@ jobs:
             fi
 
             first_component="${source_repository%%/*}"
-            if [[ "$source_repository" == */* ]]; then
-              case "$first_component" in
             if [[ "$source_repository" == */* && ( "$first_component" == *.* || "$first_component" == *:* || "$first_component" == 'localhost' ) ]]; then
               source_registry="$first_component"
               source_path="${source_repository#*/}"
-                *.*|*:*|localhost)
-                  source_registry="$first_component"
-                  source_path="${source_repository#*/}"
-                  ;;
-                *)
-                  source_registry='docker.io'
-                  source_path="$source_repository"
-                  ;;
-              esac
             else
               source_registry='docker.io'
               source_path="$source_repository"
               if [[ "$source_path" != */* ]]; then
                 source_path="library/$source_path"
               fi
-              source_path="library/$source_repository"
             fi
 
             source_registry="${source_registry,,}"
@@ -214,7 +202,6 @@ jobs:
             image_slug="${source_path//\//-}"
             image_slug="${image_slug,,}"
             if [[ "$source_registry" != 'ghcr.io' ]]; then
-            if [[ "$source_registry" != 'ghcr.io' && "$source_registry" != 'docker.io' ]]; then
               image_slug="${registry_slug}-${image_slug}"
             fi
             target_tag="$source_tag"
