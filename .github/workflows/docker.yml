@@ -202,6 +202,7 @@ jobs:
             image_slug="${source_path//\//-}"
             image_slug="${image_slug,,}"
             if [[ "$source_registry" != 'ghcr.io' ]]; then
+            if [[ "$source_registry" != 'ghcr.io' && "$source_registry" != 'docker.io' ]]; then
               image_slug="${registry_slug}-${image_slug}"
             fi
             target_tag="$source_tag"
