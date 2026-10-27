@@ -1,8 +1,13 @@
 # docker-images
+
 示例
+
 #支持私库
+
 #k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0
 #xhofe/alist:latest
+
 #支持指定架构
+
 #--platform=linux/arm64 xiaoyaliu/alist
 #--platform=linux/arm64 haroldli/xiaoya-tvbox
