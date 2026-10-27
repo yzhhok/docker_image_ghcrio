@@ -1,1 +1,21 @@
+--platform=linux/arm64 ghcr.io/sagernet/sing-box:latest-testing
+--platform=linux/arm64 ghcr.io/sagernet/sing-box:latest
+--platform=linux/arm64 openlistteam/openlist:latest
+--platform=linux/arm64 vaultwarden/server:latest
+--platform=linux/arm64 ghcr.io/mhsanaei/3x-ui:latest
+--platform=linux/arm64 jeessy/ddns-go
+--platform=linux/arm64 ghcr.io/daeuniverse/daed:latest
+--platform=linux/arm64 cloudreve/cloudreve:latest
+--platform=linux/arm64 cloudflare/cloudflared:latest
+--platform=linux/arm64 jamesits/dst-server:latest 
+--platform=linux/arm64 matrixdotorg/synapse:latest
+--platform=linux/arm64 postgres:15-alpine
+--platform=linux/arm64 adguard/adguardhome:latest
 
+
+#支持私库
+#k8s.gcr.io/kube-state-metrics/kube-state-metrics:v2.0.0
+#xhofe/alist:latest
+#支持指定架构
+#--platform=linux/arm64 xiaoyaliu/alist
+#--platform=linux/arm64 haroldli/xiaoya-tvbox
