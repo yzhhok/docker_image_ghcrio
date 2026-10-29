@@ -1,17 +1,17 @@
 推送记录（Asia/Shanghai）
-运行开始：2026-10-27 21:25:04 Asia/Shanghai
-2026-10-27 21:25:09 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:sagernet-sing-box-latest-testing-arm64 | 源：ghcr.io/sagernet/sing-box:latest-testing
-2026-10-27 21:25:12 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:sagernet-sing-box-latest-arm64 | 源：ghcr.io/sagernet/sing-box:latest
-2026-10-27 21:25:13 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-openlistteam-openlist-latest-arm64 | 源：docker.io/openlistteam/openlist:latest
-2026-10-27 21:25:15 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-vaultwarden-server-latest-arm64 | 源：docker.io/vaultwarden/server:latest
-2026-10-27 21:25:17 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:mhsanaei-3x-ui-latest-arm64 | 源：ghcr.io/mhsanaei/3x-ui:latest
-2026-10-27 21:25:18 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-jeessy-ddns-go-latest-arm64 | 源：docker.io/jeessy/ddns-go:latest
-2026-10-27 21:25:20 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:daeuniverse-daed-latest-arm64 | 源：ghcr.io/daeuniverse/daed:latest
-2026-10-27 21:25:21 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-cloudreve-cloudreve-latest-arm64 | 源：docker.io/cloudreve/cloudreve:latest
-2026-10-27 21:25:23 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-cloudflare-cloudflared-latest-arm64 | 源：docker.io/cloudflare/cloudflared:latest
-2026-10-27 21:25:25 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-jamesits-dst-server-latest-arm64 | 源：docker.io/jamesits/dst-server:latest
-2026-10-27 21:25:27 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-matrixdotorg-synapse-latest-arm64 | 源：docker.io/matrixdotorg/synapse:latest
-2026-10-27 21:25:28 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-library-postgres-15-alpine-arm64 | 源：docker.io/library/postgres:15-alpine
-2026-10-27 21:25:30 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-adguard-adguardhome-latest-arm64 | 源：docker.io/adguard/adguardhome:latest
+运行开始：2026-10-29 16:24:31 Asia/Shanghai
+2026-10-29 16:24:40 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:sagernet-sing-box-latest-testing-arm64 | 源：ghcr.io/sagernet/sing-box:latest-testing
+2026-10-29 16:24:42 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:sagernet-sing-box-latest-arm64 | 源：ghcr.io/sagernet/sing-box:latest
+2026-10-29 16:24:43 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-openlistteam-openlist-latest-arm64 | 源：docker.io/openlistteam/openlist:latest
+2026-10-29 16:24:45 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-vaultwarden-server-latest-arm64 | 源：docker.io/vaultwarden/server:latest
+2026-10-29 16:24:47 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:mhsanaei-3x-ui-latest-arm64 | 源：ghcr.io/mhsanaei/3x-ui:latest
+2026-10-29 16:24:48 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-jeessy-ddns-go-latest-arm64 | 源：docker.io/jeessy/ddns-go:latest
+2026-10-29 16:24:50 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:daeuniverse-daed-latest-arm64 | 源：ghcr.io/daeuniverse/daed:latest
+2026-10-29 16:24:52 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-cloudreve-cloudreve-latest-arm64 | 源：docker.io/cloudreve/cloudreve:latest
+2026-10-29 16:24:54 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-cloudflare-cloudflared-latest-arm64 | 源：docker.io/cloudflare/cloudflared:latest
+2026-10-29 16:25:00 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-jamesits-dst-server-latest-arm64 | 源：docker.io/jamesits/dst-server:latest
+2026-10-29 16:25:02 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-matrixdotorg-synapse-latest-arm64 | 源：docker.io/matrixdotorg/synapse:latest
+2026-10-29 16:25:09 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-library-postgres-15-alpine-arm64 | 源：docker.io/library/postgres:15-alpine
+2026-10-29 16:25:11 Asia/Shanghai | 推送成功 | ghcr.io/yzhhok/docker_images:docker-io-adguard-adguardhome-latest-arm64 | 源：docker.io/adguard/adguardhome:latest
 运行结果：success
-运行结束：2026-10-27 21:25:32 Asia/Shanghai
+运行结束：2026-10-29 16:25:13 Asia/Shanghai
