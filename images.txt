@@ -11,6 +11,7 @@
 --platform=linux/arm64 matrixdotorg/synapse:latest
 --platform=linux/arm64 postgres:15-alpine
 --platform=linux/arm64 adguard/adguardhome:latest
+--platform=linux/arm64 lyswhut/any-listen-web-server:latest
 
 
 #支持私库
